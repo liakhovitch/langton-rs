@@ -16,7 +16,7 @@ use hsv2rgb::hsv2rgb;
 const COLOR_BITSHIFT: u32 = 12;
 const WIDTH: u32 = 128;
 const HEIGHT: u32 = 64;
-const RATE_MUL: u32 = 2;
+const RATE_MUL: u32 = 6;
 const ANTS: u32 = 4;
 const COLOR_INC: u16 = 1;
 const COLOR_INC2: u32 = 512;
@@ -200,7 +200,7 @@ impl World {
 
     /// Update the `World` internal state; bounce the box around the screen.
     fn update(&mut self) {
-        self.steps_since_draw -= 1;
+        if self.steps_since_draw > 0 {self.steps_since_draw -= 1;}
         if self.reverse == false{
             for ant in self.ants.iter_mut(){
                 ant.update(&mut self.state, &mut self.hue, &mut self.hue2, self.steps_since_draw, self.reverse);
