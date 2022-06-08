@@ -16,8 +16,8 @@ use hsv2rgb::hsv2rgb;
 const COLOR_BITSHIFT: u32 = 12;
 const WIDTH: u32 = 128;
 const HEIGHT: u32 = 64;
-const RATE_MUL: u32 = 6;
-const ANTS: u32 = 4;
+const RATE_MUL: u32 = 4;
+const ANTS: u32 = 2;
 const COLOR_INC: u16 = 1;
 const COLOR_INC2: u32 = 512;
 const SHOW_ANTS: bool = false;
@@ -25,6 +25,7 @@ const FLIP_MAX: u64 = 60000;
 const HUE2_START: u32 = 1400 << COLOR_BITSHIFT;
 const HUE2_END: u32 = 900 << COLOR_BITSHIFT;
 const HUE2: bool = true;
+const FADE_COUNT: u32 = 2000;
 
 struct Ant {
     x: i32,
@@ -34,7 +35,7 @@ struct Ant {
 
 /// Representation of the application state. In this example, a box will bounce around the screen.
 struct World {
-    state: Vec<Vec<bool>>,
+    state: Vec<Vec<u32>>,
     hue: Vec<Vec<u16>>,
     hue2: Vec<Vec<u32>>,
     ants: Vec<Ant>,
@@ -110,7 +111,7 @@ impl Ant {
         ret
     }
 
-    fn update(&mut self, state: &mut Vec<Vec<bool>>, hue: &mut Vec<Vec<u16>>, hue2: &mut Vec<Vec<u32>>, steps_since_draw: u32, reverse: bool) {
+    fn update(&mut self, state: &mut Vec<Vec<u32>>, hue: &mut Vec<Vec<u16>>, hue2: &mut Vec<Vec<u32>>, steps_since_draw: u32, reverse: bool) {
         self.turn(state);
         self.flip(state);
         self.color(hue, hue2, steps_since_draw, reverse);
@@ -122,9 +123,9 @@ impl Ant {
         self.advance();
     }
 
-    fn turn(&mut self, state: &mut Vec<Vec<bool>>){
+    fn turn(&mut self, state: &mut Vec<Vec<u32>>){
         // Turn
-        if state[self.x as usize][self.y as usize] == false {
+        if state[self.x as usize][self.y as usize] == 0 {
             if self.direction == 3 {self.direction = 0;}
             else {self.direction += 1;}
         }
@@ -134,9 +135,15 @@ impl Ant {
         }
     }
 
-    fn flip(&mut self, state: &mut Vec<Vec<bool>>){
+    fn flip(&mut self, state: &mut Vec<Vec<u32>>){
         // Flip
-        state[self.x as usize][self.y as usize] ^= true;
+        //state[self.x as usize][self.y as usize] ^= true;
+		if state[self.x as usize][self.y as usize] == 0 {
+			state[self.x as usize][self.y as usize] = FADE_COUNT;
+		}
+		else {
+			state[self.x as usize][self.y as usize] = 0;
+		}
     }
 
     fn color(&mut self, hue: &mut Vec<Vec<u16>>, hue2: &mut Vec<Vec<u32>>, steps_since_draw: u32, reverse: bool){
@@ -186,7 +193,7 @@ impl World {
             reverse: false,
         };
         for _ in 0..WIDTH{
-            retval.state.push(vec![false; HEIGHT as usize]);
+            retval.state.push(vec![0; HEIGHT as usize]);
             retval.hue.push(vec![0; HEIGHT as usize]);
             retval.hue2.push(vec![HUE2_END; HEIGHT as usize]);
         }
@@ -210,7 +217,7 @@ impl World {
                 ant.update(&mut self.state, &mut self.hue, &mut self.hue2, self.steps_since_draw, self.reverse);
             }
         }
-
+		/*
         self.flip_count += 1;
         if self.flip_count >= FLIP_MAX{
             self.flip_count = 0;
@@ -224,8 +231,9 @@ impl World {
                 for ant in self.ants.iter_mut().rev(){
                     ant.reverse();
                 }
-            }
+            }	
         }
+		*/
     }
 
     /// Draw the `World` state to the frame buffer.
@@ -248,7 +256,7 @@ impl World {
                     [r, g, b, 0xffu8]
                 }
             };
-
+			if self.state[x][y] != 0 {self.state[x][y] -= 1;}
             let hue2_old = self.hue2[x][y];
             self.hue2[x][y] += COLOR_INC2 * RATE_MUL;
             if hue2_old <= HUE2_END && self.hue2[x][y] > HUE2_END { self.hue2[x][y] = HUE2_END; } else { self.hue2[x][y] %= 1536 << COLOR_BITSHIFT; }
