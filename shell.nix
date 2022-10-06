@@ -10,8 +10,7 @@ let
     xorg.libXcursor
     xorg.libXrandr
     xorg.libXi
-    libudev0-shim
-    libudev
+    udev
     vulkan-headers
     vulkan-loader
     vulkan-tools
